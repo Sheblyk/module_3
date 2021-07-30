@@ -42,14 +42,18 @@ public class CreateOperation {
                     income.setAccount(account);
                     income.setIncome(setIncomeCat(session));
                     income.setDescription(setDesc(session));
+                    account.setSum(account.getSum() + sum);
                     session.persist(income);
+                    session.persist(account);
                 } else {
                     Expense expense = new Expense();
                     expense.setSum(sum);
                     expense.setAccount(account);
                     expense.setExpense(setExpansecat(session));
                     expense.setDescription(setDesc(session));
+                    account.setSum(account.getSum() + sum);
                     session.persist(expense);
+                    session.persist(account);
                 }
                 session.getTransaction().commit();
                 System.out.println("Operation was added");
