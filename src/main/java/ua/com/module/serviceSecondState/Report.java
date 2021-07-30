@@ -53,16 +53,15 @@ public class Report {
         }
     }
 
-    private Timestamp readDate(){
+    private Timestamp readDate() {
         DateFormat format = new SimpleDateFormat("yyyy/M/d");
         loggerInfo.info("Start to set Date from ");
-        while(true){
-           try{
-               Date date = format.parse(reader.readLine());
-               return new Timestamp(date.getTime());
-           }
-           catch (IOException | ParseException e) {
-               loggerError.error("Invalid Date input");
+        while (true) {
+            try {
+                Date date = format.parse(reader.readLine());
+                return new Timestamp(date.getTime());
+            } catch (IOException | ParseException e) {
+                loggerError.error("Invalid Date input");
                 System.out.println("Invalid input, enter once more");
             }
         }

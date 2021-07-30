@@ -18,8 +18,8 @@ public class FillDB {
 
     public FillDB() {
         loggerWarn.warn("Start get configuration (hibernate)");
-      Configuration configuration = SetConfig.SetConfig("root", "ghfdsq16");
-      loggerInfo.info("Uploaded configuration (hibernate)");
+        Configuration configuration = SetConfig.SetConfig("root", "ghfdsq16");
+        loggerInfo.info("Uploaded configuration (hibernate)");
         try (SessionFactory sessionFactory = configuration.buildSessionFactory();
              Session session = sessionFactory.openSession()) {
             loggerWarn.warn("Start input test data into db");

@@ -13,7 +13,8 @@ public class Account {
         this.sum = sum;
     }
 
-    public Account(){}
+    public Account() {
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -65,7 +66,7 @@ public class Account {
         this.sum = sum;
     }
 
-    public void addOperation(Operation operation){
+    public void addOperation(Operation operation) {
         operations.add(operation);
     }
 

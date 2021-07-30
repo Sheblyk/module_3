@@ -52,6 +52,7 @@ public class CreateOperation {
                     session.persist(expense);
                 }
                 session.getTransaction().commit();
+                System.out.println("Operation was added");
                 loggerInfo.info("End commit operation");
             } catch (Exception e) {
                 loggerError.error("Rollback operation");
@@ -131,7 +132,7 @@ public class CreateOperation {
         System.out.println("\nPlease, choose the account - enter id");
         loggerInfo.info("Start upload account for operation");
         long currentAcId = Long.parseLong(reader.readLine());
-        if (currentAcId > size){
+        if (currentAcId > size) {
             loggerError.error("Account doesn`t exist");
             throw new IllegalArgumentException("This account doesn`t exist");
         }
