@@ -11,7 +11,6 @@ import java.util.Properties;
 public class DBConnect {
 
     private static final Logger loggerInfo = LoggerFactory.getLogger("info");
-    private static final Logger loggerWarn = LoggerFactory.getLogger("warn");
     private static final Logger loggerError = LoggerFactory.getLogger("error");
 
     public Connection getDbConnect(String root, String password) {

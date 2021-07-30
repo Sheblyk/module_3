@@ -20,9 +20,9 @@ public class CreateOperation {
     private static final Logger loggerWarn = LoggerFactory.getLogger("warn");
     private static final Logger loggerError = LoggerFactory.getLogger("error");
 
-    public void control(String email_) {
+    public void control(String email_, String user, String password) {
         reader = new BufferedReader(new InputStreamReader(System.in));
-        Configuration configuration = SetConfig.SetConfig("root", "ghfdsq16");
+        Configuration configuration = SetConfig.SetConfig(user, password);
         configuration.setProperty("hibernate.show_sql", "false");
         try (SessionFactory sessionFactory = configuration.buildSessionFactory();
              Session session = sessionFactory.openSession()) {

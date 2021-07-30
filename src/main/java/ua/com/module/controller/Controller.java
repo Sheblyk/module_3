@@ -36,7 +36,7 @@ public class Controller {
         loggerInfo.info("Open app");
         reader = new BufferedReader(new InputStreamReader(System.in));
         boolean checker = true;
-        FillDB fillDB = new FillDB();
+        FillDB fillDB = new FillDB(user,password);
         while (checker) {
             System.out.println("What would you like to do? \n" +
                     "1 -> make operation \n2 -> get report \n3 -> exit\n");
@@ -51,7 +51,7 @@ public class Controller {
                 case 1: {
                     loggerInfo.info("Start first state");
                     CreateOperation createOperation = new CreateOperation();
-                    createOperation.control(email);
+                    createOperation.control(email, user, password);
                     loggerInfo.info("End first state");
                     break;
                 }

@@ -16,9 +16,9 @@ public class FillDB {
     private static final Logger loggerWarn = LoggerFactory.getLogger("warn");
     private static final Logger loggerError = LoggerFactory.getLogger("error");
 
-    public FillDB() {
+    public FillDB(String user, String password) {
         loggerWarn.warn("Start get configuration (hibernate)");
-        Configuration configuration = SetConfig.SetConfig("root", "ghfdsq16");
+        Configuration configuration = SetConfig.SetConfig(user, password);
         loggerInfo.info("Uploaded configuration (hibernate)");
         try (SessionFactory sessionFactory = configuration.buildSessionFactory();
              Session session = sessionFactory.openSession()) {
