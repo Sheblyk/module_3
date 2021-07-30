@@ -1,5 +1,7 @@
 package ua.com.module.serviceSecondState;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ua.com.module.serviceFirstState.entity.Account;
 import ua.com.module.serviceFirstState.entity.Client;
 
@@ -12,17 +14,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Report {
-    private final static String PER_EMAIl = "SELECT * FROM client WHERE email = ?";
+    private final static String BY_EMAIl = "SELECT * FROM client WHERE email = ?";
     private final static String ALL_ACCOUNTS = "SELECT * FROM account WHERE client_id = ?";
-    private final static String All_OPERATIONS_PER_AC = "SELECT * FROM operation WHERE account_id = ?";
+    private final static String All_OPERATIONS_BY_AC = "SELECT * FROM operation WHERE account_id = ?";
     private final static String DELIMITER = ",";
     private BufferedReader reader;
+
+    private static final Logger loggerInfo = LoggerFactory.getLogger("info");
+    private static final Logger loggerWarn = LoggerFactory.getLogger("warn");
+    private static final Logger loggerError = LoggerFactory.getLogger("error");
 
     public void init(String root, String password, String email) {
         reader = new BufferedReader(new InputStreamReader(System.in));
         DBConnect dbConnect = new DBConnect();
         try (Connection connection = dbConnect.getDbConnect(root, password)) {
-            Client client = findIdPerEmail(connection, email);
+            Client client = findIdByEmail(connection, email);
             System.out.println(client.getName() + " " +
                     client.getSurname() + "! Choose your account ! ");
             List<Account> accountList = findAllAcPerId(connection, client.getClient_id());
@@ -43,6 +49,7 @@ public class Report {
     }
 
     private List<Account> findAllAcPerId(Connection connection, Long Id) {
+        loggerInfo.info("Start getting all accounts by client id " + Id);
         List<Account> accounts = new ArrayList<>();
         try (PreparedStatement pr = connection.prepareStatement(ALL_ACCOUNTS)) {
             pr.setLong(1, Id);
@@ -53,15 +60,18 @@ public class Report {
                 account.setSum(resultSet.getDouble("sum"));
                 accounts.add(account);
             }
+            loggerInfo.info("End getting all accounts by client id " + Id);
             return accounts;
         } catch (SQLException e) {
+            loggerError.error("Can`t upload acounts by client id " + Id);
             System.out.println(e.getMessage());
         }
         throw new RuntimeException();
     }
 
-    private Client findIdPerEmail(Connection connection, String email) {
-        try (PreparedStatement pr = connection.prepareStatement(PER_EMAIl)) {
+    private Client findIdByEmail(Connection connection, String email) {
+        loggerInfo.info("Start upload client by email " + email);
+        try (PreparedStatement pr = connection.prepareStatement(BY_EMAIl)) {
             pr.setString(1, email);
             ResultSet resultSet = pr.executeQuery();
             resultSet.next();
@@ -70,16 +80,19 @@ public class Report {
             client.setEmail(email);
             client.setName(resultSet.getString("name"));
             client.setSurname(resultSet.getString("surname"));
+            loggerInfo.info("Found client by email" + email);
             return client;
         } catch (SQLException e) {
-            System.out.println("Couldn`t find client per email " + email);
+            loggerError.error("Can`t find client by email ");
+            System.out.println("Couldn`t find client by email " + email);
         }
         throw new RuntimeException();
     }
 
     private List<String[]> getOperationByAc(Long IdAcc, Connection connection) {
+        loggerInfo.info("Start upload all operations by acount id" + IdAcc);
         List<String[]> lines = new ArrayList<>();
-        try (PreparedStatement pr = connection.prepareStatement(All_OPERATIONS_PER_AC)) {
+        try (PreparedStatement pr = connection.prepareStatement(All_OPERATIONS_BY_AC)) {
             pr.setLong(1, IdAcc);
             ResultSet resultSet = pr.executeQuery();
             while (resultSet.next()) {
@@ -98,14 +111,16 @@ public class Report {
                 line[5] = resultSet.getString("description");
                 lines.add(line);
             }
+            loggerInfo.info("End upload operations by account id " + IdAcc);
             return lines;
         } catch (SQLException e) {
-            System.out.println("");
+            loggerError.error("Can`t upload operations by account id " + IdAcc);
         }
         throw new RuntimeException();
     }
 
-    public void writeToFile(List<String[]> operations) throws IOException {
+    public void writeToFile(List<String[]> operations) {
+        loggerWarn.warn("Start writing to file report.csv");
         try (BufferedWriter writer = new BufferedWriter(new FileWriter("report.csv", false))) {
             writer.write("operationId, sum, time, commonType, subType, description\n");
             for (String[] o : operations) {
@@ -115,6 +130,10 @@ public class Report {
                         o[5] + "\n";
                 writer.write(line);
             }
+            loggerInfo.info("End writing to file report.csv");
+        } catch (IOException e) {
+            loggerError.error("Can`t write operations to file");
+            System.out.println(e.getMessage());
         }
         System.out.println("Success! Open report.csv to see your report \n");
     }

@@ -28,6 +28,10 @@ public class Account {
 
     private Double sum;
 
+    public void setAccount_id(Long account_id) {
+        this.account_id = account_id;
+    }
+
     public Long getAccount_id() {
         return account_id;
     }
