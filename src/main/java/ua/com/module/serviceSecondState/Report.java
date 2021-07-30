@@ -5,18 +5,21 @@ import org.slf4j.LoggerFactory;
 import ua.com.module.serviceFirstState.entity.Account;
 import ua.com.module.serviceFirstState.entity.Client;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.io.*;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Report {
     private final static String BY_EMAIl = "SELECT * FROM client WHERE email = ?";
     private final static String ALL_ACCOUNTS = "SELECT * FROM account WHERE client_id = ?";
-    private final static String All_OPERATIONS_BY_AC = "SELECT * FROM operation WHERE account_id = ?";
+    private final static String All_OPERATIONS_BY_AC = "SELECT * FROM operation WHERE account_id = ? AND operation.time between ? and ?";
     private final static String DELIMITER = ",";
     private BufferedReader reader;
 
@@ -38,13 +41,30 @@ public class Report {
             System.out.println("Enter id of account in order to make report");
             String count = reader.readLine();
             if (Long.parseLong(count) <= accountList.size()) {
-                List<String[]> operations = getOperationByAc(Long.parseLong(count), connection);
+                System.out.println("Enter date from (format yyyy/M/d)");
+                Timestamp from = readDate();
+                List<String[]> operations = getOperationByAc(Long.parseLong(count), connection, from, Timestamp.from(Instant.now()));
                 if (operations.size() != 0) {
                     writeToFile(operations);
                 }
             }
         } catch (SQLException | IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    private Timestamp readDate(){
+        DateFormat format = new SimpleDateFormat("yyyy/M/d");
+        loggerInfo.info("Start to set Date from ");
+        while(true){
+           try{
+               Date date = format.parse(reader.readLine());
+               return new Timestamp(date.getTime());
+           }
+           catch (IOException | ParseException e) {
+               loggerError.error("Invalid Date input");
+                System.out.println("Invalid input, enter once more");
+            }
         }
     }
 
@@ -89,11 +109,13 @@ public class Report {
         throw new RuntimeException();
     }
 
-    private List<String[]> getOperationByAc(Long IdAcc, Connection connection) {
+    private List<String[]> getOperationByAc(Long IdAcc, Connection connection, Timestamp from, Timestamp to) {
         loggerInfo.info("Start upload all operations by acount id" + IdAcc);
         List<String[]> lines = new ArrayList<>();
         try (PreparedStatement pr = connection.prepareStatement(All_OPERATIONS_BY_AC)) {
             pr.setLong(1, IdAcc);
+            pr.setTimestamp(2, from);
+            pr.setTimestamp(3, to);
             ResultSet resultSet = pr.executeQuery();
             while (resultSet.next()) {
                 String[] line = new String[6];
@@ -105,7 +127,7 @@ public class Report {
                 }
                 line[0] = resultSet.getString("operation_id");
                 line[1] = resultSet.getString("sum");
-                line[2] = resultSet.getString("time");
+                line[2] = resultSet.getTimestamp("time").toLocalDateTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
                 line[3] = resultSet.getString("operation_type");
                 line[4] = res;
                 line[5] = resultSet.getString("description");
