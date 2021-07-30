@@ -1,0 +1,122 @@
+package ua.com.module.serviceSecondState;
+
+import ua.com.module.serviceFirstState.entity.Account;
+import ua.com.module.serviceFirstState.entity.Client;
+
+import java.io.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class Report {
+    private final static String PER_EMAIl = "SELECT * FROM client WHERE email = ?";
+    private final static String ALL_ACCOUNTS = "SELECT * FROM account WHERE client_id = ?";
+    private final static String All_OPERATIONS_PER_AC = "SELECT * FROM operation WHERE account_id = ?";
+    private final static String DELIMITER = ",";
+    private BufferedReader reader;
+
+    public void init(String root, String password, String email) {
+        reader = new BufferedReader(new InputStreamReader(System.in));
+        DBConnect dbConnect = new DBConnect();
+        try (Connection connection = dbConnect.getDbConnect(root, password)) {
+            Client client = findIdPerEmail(connection, email);
+            System.out.println(client.getName() + " " +
+                    client.getSurname() + "! Choose your account ! ");
+            List<Account> accountList = findAllAcPerId(connection, client.getClient_id());
+            for (Account a : accountList) {
+                System.out.println(a);
+            }
+            System.out.println("Enter id of account in order to make report");
+            String count = reader.readLine();
+            if (Long.parseLong(count) <= accountList.size()) {
+                List<String[]> operations = getOperationByAc(Long.parseLong(count), connection);
+                if (operations.size() != 0) {
+                    writeToFile(operations);
+                }
+            }
+        } catch (SQLException | IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private List<Account> findAllAcPerId(Connection connection, Long Id) {
+        List<Account> accounts = new ArrayList<>();
+        try (PreparedStatement pr = connection.prepareStatement(ALL_ACCOUNTS)) {
+            pr.setLong(1, Id);
+            ResultSet resultSet = pr.executeQuery();
+            while (resultSet.next()) {
+                Account account = new Account();
+                account.setAccount_id(resultSet.getLong("account_id"));
+                account.setSum(resultSet.getDouble("sum"));
+                accounts.add(account);
+            }
+            return accounts;
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        throw new RuntimeException();
+    }
+
+    private Client findIdPerEmail(Connection connection, String email) {
+        try (PreparedStatement pr = connection.prepareStatement(PER_EMAIl)) {
+            pr.setString(1, email);
+            ResultSet resultSet = pr.executeQuery();
+            resultSet.next();
+            Client client = new Client();
+            client.setClient_id(resultSet.getLong("client_id"));
+            client.setEmail(email);
+            client.setName(resultSet.getString("name"));
+            client.setSurname(resultSet.getString("surname"));
+            return client;
+        } catch (SQLException e) {
+            System.out.println("Couldn`t find client per email " + email);
+        }
+        throw new RuntimeException();
+    }
+
+    private List<String[]> getOperationByAc(Long IdAcc, Connection connection) {
+        List<String[]> lines = new ArrayList<>();
+        try (PreparedStatement pr = connection.prepareStatement(All_OPERATIONS_PER_AC)) {
+            pr.setLong(1, IdAcc);
+            ResultSet resultSet = pr.executeQuery();
+            while (resultSet.next()) {
+                String[] line = new String[6];
+                String res;
+                if (resultSet.getObject("income") != null) {
+                    res = resultSet.getObject("income").toString();
+                } else {
+                    res = resultSet.getObject("expense").toString();
+                }
+                line[0] = resultSet.getString("operation_id");
+                line[1] = resultSet.getString("sum");
+                line[2] = resultSet.getString("time");
+                line[3] = resultSet.getString("operation_type");
+                line[4] = res;
+                line[5] = resultSet.getString("description");
+                lines.add(line);
+            }
+            return lines;
+        } catch (SQLException e) {
+            System.out.println("");
+        }
+        throw new RuntimeException();
+    }
+
+    public void writeToFile(List<String[]> operations) throws IOException {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("report.csv", false))) {
+            writer.write("operationId, sum, time, commonType, subType, description\n");
+            for (String[] o : operations) {
+                String line = o[0] + DELIMITER +
+                        o[1] + DELIMITER + o[2] + DELIMITER +
+                        o[3] + DELIMITER + o[4].toLowerCase() + DELIMITER +
+                        o[5] + "\n";
+                writer.write(line);
+            }
+        }
+        System.out.println("Success! Open report.csv to see your report \n");
+    }
+}
+
